@@ -1,4 +1,4 @@
-module xk6-gzip
+module github.com/JBrVJxsc/xk6-gzip
 
 go 1.24.2
 
