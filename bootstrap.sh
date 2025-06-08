@@ -321,10 +321,50 @@ install_xk6() {
     print_success "xk6 tool installed"
 }
 
+# Find xk6 binary location
+find_xk6() {
+    # Try to find xk6 in common locations
+    local xk6_path=""
+    
+    # Check if xk6 is in PATH
+    if command -v xk6 &> /dev/null; then
+        xk6_path="xk6"
+    else
+        # Try GOPATH/bin
+        local gopath=$(go env GOPATH)
+        if [ -f "$gopath/bin/xk6" ]; then
+            xk6_path="$gopath/bin/xk6"
+        elif [ -f "$gopath/bin/xk6.exe" ]; then
+            xk6_path="$gopath/bin/xk6.exe"
+        # Try GOROOT/bin
+        else
+            local goroot=$(go env GOROOT)
+            if [ -f "$goroot/bin/xk6" ]; then
+                xk6_path="$goroot/bin/xk6"
+            elif [ -f "$goroot/bin/xk6.exe" ]; then
+                xk6_path="$goroot/bin/xk6.exe"
+            fi
+        fi
+    fi
+    
+    if [ -z "$xk6_path" ]; then
+        print_error "Could not find xk6 binary. Please add \$(go env GOPATH)/bin to your PATH"
+        print_warning "You can add this to your shell profile:"
+        echo "export PATH=\$PATH:\$(go env GOPATH)/bin"
+        exit 1
+    fi
+    
+    echo "$xk6_path"
+}
+
 # Build custom k6 binary with gzip extension
 build_k6() {
     print_status "Building custom k6 binary with gzip extension..."
-    xk6 build --with xk6-gzip=.
+    
+    local xk6_binary=$(find_xk6)
+    print_status "Using xk6 at: $xk6_binary"
+    
+    "$xk6_binary" build --with xk6-gzip=.
     
     # Check if build was successful
     if [ -f "./k6" ] || [ -f "./k6.exe" ]; then
@@ -368,8 +408,12 @@ show_instructions() {
     echo ""
     echo "🔧 To modify the extension:"
     echo "   1. Edit gzip.go"
-    echo "   2. Run: xk6 build --with xk6-gzip=."
+    echo "   2. Run: \$(go env GOPATH)/bin/xk6 build --with xk6-gzip=."
     echo "   3. Run: ./k6 run test-gzip.js"
+    echo ""
+    echo "💡 Tip: To use xk6 directly, add Go bin to your PATH:"
+    echo "   export PATH=\$PATH:\$(go env GOPATH)/bin"
+    echo "   Then you can use: xk6 build --with xk6-gzip=."
 }
 
 # Main execution
