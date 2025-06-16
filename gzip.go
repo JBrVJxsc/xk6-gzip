@@ -2,10 +2,10 @@ package gzip
 
 import (
 	"bytes"
-	"compress/gzip"
 	"fmt"
 	"io"
 
+	"github.com/klauspost/compress/gzip"
 	"go.k6.io/k6/js/modules"
 )
 
@@ -59,9 +59,12 @@ func (g *Gzip) Compress(input string) (string, error) {
 	}
 
 	var buf bytes.Buffer
-	writer := gzip.NewWriter(&buf)
+	writer, err := gzip.NewWriterLevel(&buf, gzip.BestSpeed) // Use BestSpeed for k6 performance
+	if err != nil {
+		return "", fmt.Errorf("failed to create gzip writer: %w", err)
+	}
 
-	_, err := writer.Write([]byte(input))
+	_, err = writer.Write([]byte(input))
 	if err != nil {
 		writer.Close()
 		return "", fmt.Errorf("failed to write data: %w", err)
@@ -83,9 +86,12 @@ func (g *Gzip) CompressBytes(input []byte) ([]byte, error) {
 	}
 
 	var buf bytes.Buffer
-	writer := gzip.NewWriter(&buf)
+	writer, err := gzip.NewWriterLevel(&buf, gzip.BestSpeed) // Use BestSpeed for k6 performance
+	if err != nil {
+		return nil, fmt.Errorf("failed to create gzip writer: %w", err)
+	}
 
-	_, err := writer.Write(input)
+	_, err = writer.Write(input)
 	if err != nil {
 		writer.Close()
 		return nil, fmt.Errorf("failed to write data: %w", err)
